@@ -10,6 +10,7 @@ function GameManager(size, InputManager, Actuator, StorageManager) {
   this.inputManager.on("restart", this.restart.bind(this));
   this.inputManager.on("restartWithConfirmation", this.restartWithConfirmation.bind(this));
   this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
+  this.inputManager.on("powerUp", this.powerUp.bind(this));
 
   this.setup();
 }
@@ -26,6 +27,50 @@ GameManager.prototype.restart = function () {
 GameManager.prototype.restartWithConfirmation = function () {
     // Open confirm message
     this.actuator.promptRestart();
+};
+
+// This sum the cells of the 8, 4 and two into one
+
+GameManager.prototype.powerUp = function () {
+  var grid = this.grid.serialize();
+  var cells = grid.cells;
+
+  var availables = [];
+  var sum = 0;
+  for (var x = 0; x < this.size; x++) {
+    var row = cells[x];
+
+    for (var y = 0; y < this.size; y++) {
+      if(row[y]) {
+        sum += row[y].value;
+        availables.push(row[y]);
+      }
+    }
+  }
+
+  if(availables && sum > 2) {
+    var binary = sum.toString(2); //This convert sum to a binary array to check if it is power of two
+    var positions = [];
+    var index = binary.length - 1;
+    for (var i = 0; i < binary.length; i++) {
+      if (binary[i] == 1) {
+        positions.push(Math.pow(2, index - i));
+      }
+    }
+
+    this.grid = new Grid(this.size);
+
+    for (i = 0; i < positions.length; i++) {
+      var cell = this.grid.randomAvailableCell();
+      var tile = new Tile(cell, positions[i]);
+      this.grid.insertTile(tile);
+    }
+
+    this.addRandomTile();
+
+  }
+
+  this.actuate();
 };
 
 // Keep playing after winning (allows going over 2048)
